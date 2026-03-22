@@ -27,7 +27,7 @@ main:							# label for main
 	movl	$5, -36(%rbp)		# stores size = 5 at -36(%rbp)
 	movl	$0, -44(%rbp)		# stores i = 0 at -44(%rbp)
 	jmp	.L2						# jump to .L2
-.L3:							# position label
+.L3:							# start of squaring loop
 	movl	-44(%rbp), %eax		# loads i in %eax registry
 	cltq						# expands i to 64-bits in %rax
 	leaq	0(,%rax,4), %rdx	# calculates i * 4 and stores it in %rdx
@@ -45,13 +45,13 @@ main:							# label for main
 	leaq	0(,%rcx,4), %rsi	# calculates i * 4 and stores it in %rsi
 	leaq	-32(%rbp), %rcx		# stores the address of array[0] in %rcx
 	addq	%rsi, %rcx			# adds i * 4 to the address of array[0] and stores it in %rcx
-	imull	%edx, %eax			# multiplies %edx and %eax and stores it in %eax
-	movl	%eax, (%rcx)		# stores squared result back into the array[i]
-	addl	$1, -44(%rbp)		# adds 1 to the value stored at -44(%rbp) and store it back there; i++
+	imull	%edx, %eax			# multiplies %edx and %eax; this is *(array+i) * *(array+i)
+	movl	%eax, (%rcx)		# stores squared result back into array[i]; this is *(array+i) = *(array+i) * *(array+i)
+	addl	$1, -44(%rbp)		# adds 1 to the value stored at -44(%rbp) and store it back there; i++; this is for the loop counter
 .L2:							# position label
 	movl	-44(%rbp), %eax		# loads the value at -44(%rbp) in %eax
 	cmpl	-36(%rbp), %eax		# calculates %eax - -36(%rbp)
-	jl	.L3						# checks if the cmpl value is negative, if so, jump to .L3
+	jl	.L3						# if i < size, jump back to loop body; this is the for loop condition
 	movl	$0, -40(%rbp)		# stores 0 at -40(%rbp); initializes print loop at i = 0
 	jmp	.L4						# jump to .L4
 .L5:							# position label
@@ -65,13 +65,13 @@ main:							# label for main
 	leaq	.LC0(%rip), %rax	# loads the address of "%d " into %rax
 	movq	%rax, %rdi			# moves %rax in %rdi
 	movl	$0, %eax			# stores 0 at %eax (return 0)
-	call	printf@PLT			# calls printf to print array[i]
+	call	printf@PLT			# calls printf to print array[i]; this is printf("%d ", *(array+i))
 	addl	$1, -40(%rbp)		# add 1 to -40(%rbp); i++
 .L4:							# position label
 	movl	-40(%rbp), %eax		# loads of value of -40(%rbp) in $eax
 	cmpl	-36(%rbp), %eax		# calculates %eax - -36(%rbp)
 	jl	.L5						# checks if the cmpl value is negative, if so, jump to .L5
-	movl	$0, %eax			# clears %eax before calling printf
+	movl	$0, %eax			# stores return value 0 in %eax
 	movq	-8(%rbp), %rdx		# loads of value of -8(%rbp) in $rdx
 	subq	%fs:40, %rdx		# subtracts the stack canary to check if it was modified
 	je	.L7						# if it not is modified, jump to .L7
